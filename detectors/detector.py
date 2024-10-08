@@ -1,0 +1,1 @@
+# Description de la classe abstraite implémenté de plusieurs manières ensuite
