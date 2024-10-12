@@ -63,3 +63,32 @@ The project is based on OOP as it fits well with the idea of puzzle where you ad
 
 LIEN DE LA PAGE secrete a ne pas regarder : https://chatgpt.com/share/6702cffd-0724-8009-9980-2ede68a49b92
 
+Guide d'utilisation :
+
+# Utilisation de yolov5
+
+Installer les requirements de yolov5 : pip install -r requirements.txt dans le folder yolov5
+
+
+
+
+
+
+
+## NOTES IMPORTANTES :
+
+-----------------------------------------------------------------------------------------------------|
+| **YOLOv5**                    | RGB                        | YOLOv5 expects the input image in RGB format for processing. You typically convert BGR to RGB if using OpenCV. |
+| **OpenCV**                    | BGR                        | OpenCV loads images in BGR format by default. It also supports conversions to/from HSV, RGB, etc.    |
+| **Mask R-CNN / Faster R-CNN** | RGB                        | These models expect images in RGB format, especially when using libraries like PyTorch or TensorFlow.|
+| **TensorFlow/Keras**          | RGB                        | TensorFlow generally processes images in RGB format, commonly used with Keras image processing functions. |
+| **PyTorch**                   | RGB                        | PyTorch also uses RGB format for most image processing tasks. You may need to manually convert from BGR if using OpenCV to load images. |
+| **DeepLab (Semantic Segmentation)** | RGB                  | The DeepLab model expects images in RGB format for segmentation tasks.                              |
+| **OpenCV (HSV)**              | HSV                        | Often used for color-based filtering and thresholding. You need to convert the image from BGR to HSV. |
+
+### Notes:
+- **YOLOv5**: While it expects images in RGB format, OpenCV loads images in BGR format by default. Therefore, a conversion from BGR to RGB is typically required before passing the image to the model.
+- **OpenCV**: Uses BGR as the default format when loading or displaying images. Conversion functions like `cv2.cvtColor()` are often used to switch between BGR, RGB, and HSV.
+- **Color-Based Detection**: HSV format is preferred when performing color thresholding because it separates color information (hue) from intensity (saturation and value), making color filtering easier.
+
+For your project, if you load the image using OpenCV, you'll need to convert it from BGR to RGB before using models like YOLOv5. If you're performing color-based detection (like detecting a red cap), you'll likely convert from BGR to HSV.
