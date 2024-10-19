@@ -5,7 +5,7 @@ import logging
 import warnings
 import contextlib
 import os
-from detector import Detector
+from detectors import Detector
 
 # Set the logging level to ERROR to suppress detailed YOLOv5 logs
 logging.getLogger().setLevel(logging.ERROR)
@@ -15,18 +15,18 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 class YOLOv5Detector(Detector):
-    def __init__(self, model_path='yolov5s.pt', device='cpu'):
+    def __init__(self, model_version='yolov5s', device='cpu'):
         """
         Initialize the YOLOv5 model for human detection.
         Parameters:
-        - model_path: The path to the YOLOv5 model (default is 'yolov5s.pt').
+        - model_version: The version of the YOLOv5 model to load (default is 'yolov5s').
         - device: 'cpu' or 'cuda' for running on the GPU.
         """
         self.device = device
-        # Temporarily suppress stdout and stderr to hide model loading messages
+        # Suppress stdout and stderr to hide model loading messages
         with open(os.devnull, 'w') as f, contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
-            # Load the YOLOv5 model quietly
-            self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path, verbose=False)
+            # Load the YOLOv5 model (pre-trained model from ultralytics)
+            self.model = torch.hub.load('ultralytics/yolov5', model_version, verbose=False)
         self.model.to(device)
         self.model.eval()  # Set the model to evaluation mode
 
@@ -38,7 +38,7 @@ class YOLOv5Detector(Detector):
         - conf_threshold: Confidence threshold for filtering detections (default is 0.6).
         - iou_threshold: IoU threshold for non-maximum suppression (default is 0.3).
         Returns:
-        - A list of bounding boxes [(x1, y1, x2, y2)] for detected humans.
+        - A list of bounding boxes [(x1, y1, w, h)] for detected humans.
         """
         # Convert the frame from BGR to RGB
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -82,7 +82,7 @@ def find_intersecting_human(red_cap_boxes, human_boxes):
     Find the human box that intersects with the red cap box.
     Parameters:
     - red_cap_box: Bounding box for the red cap (x, y, w, h).
-    - human_boxes: List of human bounding boxes [(x1, y1, x2, y2)].
+    - human_boxes: List of human bounding boxes [(x1, y1, w, h)].
     Returns:
     - The human boxes that intersects with a red cap box, or None if no intersection is found.
 
