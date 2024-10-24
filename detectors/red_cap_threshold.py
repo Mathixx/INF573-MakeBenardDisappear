@@ -1,10 +1,9 @@
 import cv2
 import numpy as np
-
 from detectors import Detector
 
 class RedCapDetector(Detector):
-    def detect(self, frame: np.ndarray, hue_range=(0, 10), alt_hue_range=(170, 180), min_size=600, min_circularity=0.3) -> list:
+    def detect(self, frame: np.ndarray, hue_range=(0, 5), alt_hue_range=(170, 180), min_size=620, min_circularity=0.3) -> list:
         """
         Detect the region where the red cap is most likely located.
         Returns bounding boxes around regions that match the red cap color and shape criteria.

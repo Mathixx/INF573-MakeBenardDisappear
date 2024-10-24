@@ -29,3 +29,15 @@ class BenardSupressor:
 
         cap.release()
         out.release()
+
+    def process_image(self, input_image):
+        # Step 1: Detect the object (e.g., person with red cap)
+        detection_boxes = self.detector.detect(input_image)
+
+        # Step 2: Segment the object
+        segmented_mask = self.segmenter.segment(input_image, detection_boxes)
+
+        # Step 3: Remove the object
+        final_image = self.remover.remove(input_image, segmented_mask)
+
+        return final_image

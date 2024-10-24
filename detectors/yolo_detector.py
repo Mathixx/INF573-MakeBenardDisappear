@@ -1,5 +1,6 @@
 import os
 from detectors import Detector
+from detectors import RedCapDetector
 from ikomia.dataprocess.workflow import Workflow
 import numpy as np
 import cv2
@@ -34,7 +35,7 @@ class YOLODetector(Detector):
             "cuda": str(device == 'cuda')
         })
 
-    def detect(self, frame: np.ndarray) -> list:
+    def human_detect(self, frame: np.ndarray) -> list:
         """
         Detect humans in the frame using the YOLOv5 model via Ikomia.
         Parameters:
@@ -44,6 +45,7 @@ class YOLODetector(Detector):
         Returns:
         - A list of bounding boxes [(x1, y1, w, h)] for detected humans.
         """
+
         # Convert BGR to RGB (if required)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -63,49 +65,85 @@ class YOLODetector(Detector):
 
         return boxes
 
+    def red_cap_detect(self, frame: np.ndarray) -> list:
+        """
+        Detect the region where the red cap is most likely located.
+        Returns bounding boxes around regions that match the red cap color and shape criteria.
+        Parameters:
+        - frame: The input image (video frame) as a numpy array (in BGR format).
+        Returns:
+        - A list of bounding boxes in the form (x, y, w, h) for detected red caps.
+          If no cap is found, returns an empty list.
+        """
+        # Initialize the red cap detector
+        red_cap_detector = RedCapDetector()
 
-def find_intersecting_human(red_cap_boxes, human_boxes):
-    """
-    Find the human boxes that intersect the most with each red cap box.
+        # Detect the red cap in the frame
+        red_cap_boxes = red_cap_detector.detect(frame)
+
+        return red_cap_boxes
     
-    Parameters:
-    - red_cap_boxes: List of bounding boxes for the red cap [(x, y, w, h)].
-    - human_boxes: List of human bounding boxes [(x1, y1, w, h)].
+    def detect(self, frame: np.ndarray) -> list:
+        """
+        Parameters:
+        - frame: The input image (video frame) as a numpy array.
+
+        Returns:
+        - An array representing the detection result (e.g., bounding box, mask, etc.).
+          If no human with red cap is found, returns None.
+        """
+        # Detect humans in the frame
+        human_Boxes = self.human_detect(frame)
+
+        # Detect red caps in the frame
+        red_cap_Boxes = self.red_cap_detect(frame)
+
+        def find_intersecting_human(red_cap_boxes, human_boxes):
+            """
+            Find the human boxes that intersect the most with each red cap box.
     
-    Returns:
-    - A list of the human boxes that intersect the most with each red cap box.
-    """
-    def intersection_area(box1, box2):
-        # Calculate the (x, y, w, h) of the intersection rectangle
-        x1 = max(box1[0], box2[0])
-        y1 = max(box1[1], box2[1])
-        x2 = min(box1[0] + box1[2], box2[0] + box2[2])
-        y2 = min(box1[1] + box1[3], box2[1] + box2[3])
+             Parameters:
+                - red_cap_boxes: List of bounding boxes for the red cap [(x, y, w, h)].
+                - human_boxes: List of human bounding boxes [(x1, y1, w, h)].
+    
+            Returns:
+                - A list of the human boxes that intersect the most with each red cap box.
+            """
+            def intersection_area(box1, box2):
+                # Calculate the (x, y, w, h) of the intersection rectangle
+                x1 = max(box1[0], box2[0])
+                y1 = max(box1[1], box2[1])
+                x2 = min(box1[0] + box1[2], box2[0] + box2[2])
+                y2 = min(box1[1] + box1[3], box2[1] + box2[3])
 
-        # Calculate intersection area
-        width = max(0, x2 - x1)
-        height = max(0, y2 - y1)
+                # Calculate intersection area
+                width = max(0, x2 - x1)
+                height = max(0, y2 - y1)
 
-        return width * height
+                return width * height
 
-    most_intersecting_humans = []
+            most_intersecting_humans = []
 
-    # For each red cap, find the human box that intersects the most
-    for cap in red_cap_boxes:
-        max_intersection_area = 0
-        best_human_box = None
+            # For each red cap, find the human box that intersects the most
+            for cap in red_cap_boxes:
+                max_intersection_area = 0
+                best_human_box = None
 
-        for human in human_boxes:
-            # Calculate the intersection area between the red cap and the human box
-            area = intersection_area(cap, human)
+                for human in human_boxes:
+                    # Calculate the intersection area between the red cap and the human box
+                    area = intersection_area(cap, human)
 
-            # Keep track of the human box with the largest intersection
-            if area > max_intersection_area:
-                max_intersection_area = area
-                best_human_box = human
+                    # Keep track of the human box with the largest intersection
+                    if area > max_intersection_area:
+                        max_intersection_area = area
+                        best_human_box = human
 
-        if best_human_box:
-            most_intersecting_humans.append(best_human_box)
+                if best_human_box:
+                    most_intersecting_humans.append(best_human_box)
 
-    return most_intersecting_humans
+            return most_intersecting_humans
 
+        # Find the human boxes that intersect the most with each red cap box
+        intersecting_humans = find_intersecting_human(red_cap_Boxes, human_Boxes)
+
+        return intersecting_humans
