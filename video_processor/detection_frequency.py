@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 class DetectionFrequency():
     
@@ -19,16 +20,24 @@ class DetectionFrequency():
 class FixedFrequency(DetectionFrequency):
     
     def __init__(self, frequency: int) -> None:
+        self.last = -1
         self.frequency = frequency
 
     def select_next(self, actual_frame: int) -> int:
-        return actual_frame + self.frequency
-    
+        if actual_frame - self.last >= self.frequency:
+            self.last = actual_frame
+            return True
+        return False
 
 class TimeFrequency(DetectionFrequency):
     
-    def __init__(self, time: int) -> None:
-        self.time = time
+    def __init__(self, fps=30.0) -> None:
+        self.start_time = time.time()
+        self.fps = fps
 
     def select_next(self, actual_frame: int) -> int:
-        return actual_frame + self.time
+        actual_time = time.time()
+        if actual_time - self.start_time >= actual_frame/self.fps:
+            self.start_time = actual_time
+            return True
+        return False

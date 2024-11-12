@@ -1,57 +1,130 @@
 import cv2
+import os
 import numpy as np
-from detection_frequency import DetectionFrequency, FixedFrequency, TimeFrequency
+from .detection_frequency import DetectionFrequency, FixedFrequency, TimeFrequency
 from detectors import Detector, YOLODetector, RedCapDetector
 from segmentors import Segmentor, MaskRCNNSegmentor, YoloSegmentor
 from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover
 
-class VideoProcessor():
+class BenardSupressor():
     def __init__(self, detector:Detector, segmentor:Segmentor, remover:Remover, frequency: DetectionFrequency) -> None:
         self.detector = detector
         self.segmentor = segmentor
         self.remover = remover
         self.frequency = frequency
 
-    def process_video(self, input_video: str, output_video: str) -> None:
+    def process_video(self, input_path: str, output_folder: str, debugging_frames_level='None', debugging_video_level='None') -> None:
         """
         Process a video to remove objects detected by the detector.
         Parameters:
-        - input_video: The path to the input video file.
-        - output_video: The path to save the output video.
+        - input_path: The path to the input video.
+        - output_folder: The folder where the output video will be saved.
+        - debugging_frames_level: The level of debugging for the frames ('None', 'Detector', 'Segmentor', 'Remover', 'All').
+        - debugging_video_level: The level of debugging for the video ('None', 'Detector', 'Segmentor', 'All').
         """
-        video = cv2.VideoCapture(input_video)
+        video = cv2.VideoCapture(input_path)
         if not video.isOpened():
             raise FileNotFoundError("Could not open video file")
-        else :
-            frame_count = 0
+        original_frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+        original_frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(video.get(cv2.CAP_PROP_FPS))
+        print(f"Original video properties: {original_frame_width}x{original_frame_height} @ {fps} FPS")
+
+    
+        input_filename = os.path.splitext(os.path.basename(input_path))[0]
+        output_folder = output_folder + f"{input_filename}_output/"
+        output_path = output_folder + f"{input_filename}_processed.mp4"
+        debugging_folder = output_folder + 'debugging/'
+        if not os.path.exists(debugging_folder):
+            os.makedirs(debugging_folder)
+
+        output_video = None
+        frame_count = 0
+
+        while video.isOpened():
             ret, frame = video.read()
+            if not ret:
+                break
 
-            while ret:
-                if self.frequency.select_next(frame_count) == frame_count:
-                    # Detect objects in the frame
-                    final_frame = self.process_image(frame)
+            if self.frequency.select_next(frame_count):
+                
+                bounding_boxes, mask, final_frame = self.process_image(frame, debugging_folder, frame_count, debugging_frames_level)
 
-                    # Save the frame to the output video
-                    cv2.imwrite(output_video, final_frame)
+                if output_video is None:
+                    processed_frame_height, processed_frame_width = final_frame.shape[:2]
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    output_video = cv2.VideoWriter(output_path, fourcc, fps, (processed_frame_width, processed_frame_height))
+                    print(f"Output video properties: {processed_frame_width}x{processed_frame_height} @ {fps} FPS")
+                    if debugging_video_level == 'Detector' or debugging_video_level == 'All':
+                        detector_video = cv2.VideoWriter(debugging_folder + 'detector.mp4', fourcc, fps, (processed_frame_width, processed_frame_height))
+                    if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
+                        segmentor_video = cv2.VideoWriter(debugging_folder + 'segmentor.mp4', fourcc, fps, (processed_frame_width, processed_frame_height))
 
-                frame_count += 1
-                ret, frame = video.read()
+                print(f"Processed frame {frame_count}")
 
-    def process_image(self, frame:np.array) -> np.array:
+                if debugging_video_level == 'Detector' or debugging_video_level == 'All':
+                    boxed_frame = self.detector.draw_boxes(frame, bounding_boxes)
+                    detector_video.write(boxed_frame)
+
+                if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
+                    masked_frame = self.segmentor.draw_masks(frame, mask)
+                    segmentor_video.write(masked_frame)
+
+                # Save the frame to the output video
+                output_video.write(final_frame)
+
+            frame_count += 1
+
+        video.release()
+        output_video.release()
+        if debugging_video_level == 'Detector' or debugging_video_level == 'All':
+            detector_video.release()
+        if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
+            segmentor_video.release()
+
+    def process_image(self, frame:np.array, output_folder, frame_count:int=None, debugging_frames_level='None') -> np.array:
         """
         Process an image to remove objects detected by the detector.
         Parameters:
-        - input_image: The path to the input image file.
+        - frame: the frame that will be processed.
+        - output_file: The path to save the output image.
         Returns:
         - The processed image with objects removed.
         """
         # Detect objects in the frame
         bounding_boxes = self.detector.detect(frame)
 
+        if debugging_frames_level == 'Detector' or debugging_frames_level == 'All':
+            if not os.path.exists(output_folder + 'detector/'):
+                os.makedirs(output_folder + 'detector/')
+
+            boxed_frame = self.detector.draw_boxes(frame, bounding_boxes)
+            cv2.imwrite(output_folder + f"detector/frame_{frame_count}.jpg", boxed_frame)
+
         # Segment the objects in the frame
         mask = self.segmentor.segment(frame, bounding_boxes)
+
+        if debugging_frames_level == 'Segmentor' or debugging_frames_level == 'All':
+            if not os.path.exists(output_folder + 'segmentor/'):
+                os.makedirs(output_folder + 'segmentor/')
+
+            masked_frame = self.segmentor.draw_masks(frame, mask)
+            cv2.imwrite(output_folder + f"segmentor/frame_{frame_count if frame_count is not None else 0}.jpg", masked_frame)
 
         # Remove the objects from the frame
         final_frame = self.remover.remove(frame, mask)
 
-        return final_frame
+        if debugging_frames_level == 'Remover' or debugging_frames_level == 'All':
+            if not os.path.exists(output_folder + 'remover/'):
+                os.makedirs(output_folder + 'remover/')
+
+            cv2.imwrite(output_folder + f"remover/frame_{frame_count if frame_count is not None else 0}.jpg", final_frame)
+
+        if debugging_frames_level == 'All':
+            if not os.path.exists(output_folder + 'all/'):
+                os.makedirs(output_folder + 'all/')
+
+            cv2.imwrite(output_folder + f"all/frame_{frame_count if frame_count is not None else 0}.jpg", np.hstack([frame, boxed_frame, masked_frame, final_frame]))
+   
+        return bounding_boxes, mask, final_frame
+    

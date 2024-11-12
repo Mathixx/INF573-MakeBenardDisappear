@@ -1,9 +1,5 @@
 ikomia_env/
 Ikomia_venv/
 
-_test_data/video/
-_test_data/images/
 _test_data/
-
 *.pyc
-
