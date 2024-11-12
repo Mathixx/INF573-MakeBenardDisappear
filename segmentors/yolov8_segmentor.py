@@ -3,6 +3,33 @@ from ikomia.dataprocess.workflow import Workflow
 from segmentors import Segmentor
 import cv2
 
+def extract_shadow_mask(person_mask):
+    # Check if mask is empty
+    if np.sum(person_mask) == 0:
+        return person_mask
+
+    # Dilate the person mask to find areas near the person that might contain the shadow
+    kernel = np.ones((4, 4), np.uint8)
+    dilated_person_mask = cv2.dilate(person_mask, kernel, iterations=5)
+
+    # Dilate the person mask to find areas near the person that might contain the shadow
+    kernel1 = np.ones((8, 8), np.uint8)
+    dilated_person_mask1 = cv2.dilate(person_mask, kernel1, iterations=5)
+
+    # Find the bounding box of the person in the mask
+    y_indices, x_indices = np.where(person_mask > 0)
+    top_y, bottom_y = min(y_indices), max(y_indices)
+    middle_y = (top_y + bottom_y) // 2  # Middle y-coordinate
+
+    # Only keep the shadow mask below the middle y-coordinate
+    dilated_person_mask1[:middle_y, :] = 0
+    dilated_person_mask[middle_y:, :] = 0
+
+    # Apply this mask to keep only the shadow below the middle y-coordinate
+    shadow_mask = cv2.bitwise_or(dilated_person_mask1, dilated_person_mask)
+
+    return shadow_mask
+
 class YoloSegmentor(Segmentor):
     """
     YOLO-based segmentor using Ikomia.
@@ -42,20 +69,27 @@ class YoloSegmentor(Segmentor):
 
         # we have to run the workflow on the input image but only in the parts specified by the bounding boxes
         masks = []
+
+        # Assume 'image' is your input image and 'bounding_boxes' is a list of bounding boxes
+        masked_image = frame_rgb.copy()  # Start with a copy of the original image
+
+        # Set everything in the image to black initially
+        masked_image[:, :] = 0
+
+        # Loop through each bounding box and fill in only those areas
         for bbox in bounding_boxes:
             x, y, w, h = bbox
-            # Crop the frame to the bounding box area
-            cropped_frame = frame_rgb.copy()
-            # Fill everything outside the bounding box with black
-            cropped_frame[:y, :] = 0
-            cropped_frame[y+h:, :] = 0
-            cropped_frame[:, :x] = 0
-            cropped_frame[:, x+w:] = 0
+            # Copy the pixels within the bounding box from the original image to the masked image
+            masked_image[y:y+h, x:x+w] = frame_rgb[y:y+h, x:x+w]
 
-            # Run the workflow on the cropped frame
-            self.workflow.run_on(cropped_frame)
-            res = self.segmentor.get_results()
-            for obj in res.get_objects():
+        # Run the workflow on the final masked image
+        self.workflow.run_on(masked_image)
+
+        # Retrieve results from the segmentor
+        masks = []
+        res = self.segmentor.get_results()
+        for obj in res.get_objects():
+            if obj.label == 'person':
                 mask = obj.mask
                 masks.append(mask)
 
@@ -64,5 +98,9 @@ class YoloSegmentor(Segmentor):
         for m in masks:
             mask = cv2.bitwise_or(mask, m)
 
-        return mask
+        return extract_shadow_mask(mask)
+
+
+
+
 
