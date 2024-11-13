@@ -3,7 +3,7 @@ import numpy as np
 from detectors import Detector
 
 class RedCapDetector(Detector):
-    def detect(self, frame: np.ndarray, hue_range=(0, 5), alt_hue_range=(170, 180), min_size=620, min_circularity=0.3) -> list:
+    def detect(self, frame: np.ndarray, hue_range=(0, 5), alt_hue_range=(170, 180), min_circularity=0.3, ratio=0.0002, min_saturation=100, min_value=100) -> list:
         """
         Detect the region where the red cap is most likely located.
         Returns bounding boxes around regions that match the red cap color and shape criteria.
@@ -12,8 +12,8 @@ class RedCapDetector(Detector):
         - frame: The input image (video frame) as a numpy array (in BGR format).
         - hue_range: A tuple specifying the primary hue range for red detection (0-10).
         - alt_hue_range: A tuple specifying the secondary hue range for red detection (170-180).
-        - min_size: Minimum size of the contour area to be considered a valid detection.
         - min_circularity: Minimum circularity to filter out non-cap objects (between 0 and 1).
+        - ratio: A scaling factor for minimum contour area, adjusting dynamically based on image size (default is 0.001).
 
         Returns:
         - A list of bounding boxes in the form (x, y, w, h) for detected red caps.
@@ -23,9 +23,9 @@ class RedCapDetector(Detector):
         # Convert the frame from BGR to HSV color space
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Fixed saturation and value thresholds
-        min_saturation = 100
-        min_value = 100
+        # # Fixed saturation and value thresholds
+        # min_saturation = 100
+        # min_value = 100
 
         # Create a mask manually based on the specified hue ranges
         mask1 = (
@@ -47,6 +47,11 @@ class RedCapDetector(Detector):
         if not contours:
             return []
 
+        # --- Dynamic Size Thresholding using ratio parameter ---
+        # Adjust min_size dynamically based on image resolution and the ratio parameter
+        height, width = frame.shape[:2]
+        min_size = int((height * width) * ratio)
+
         # Filter contours based on shape criteria: area, aspect ratio, circularity
         bounding_boxes = []
         for contour in contours:
@@ -67,6 +72,3 @@ class RedCapDetector(Detector):
                 bounding_boxes.append((x, y, w, h))
 
         return bounding_boxes
-
-
-

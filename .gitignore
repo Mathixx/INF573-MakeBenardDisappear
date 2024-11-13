@@ -3,11 +3,7 @@ Ikomia_venv/
 
 _test_data/video/
 _test_data/images/
+_test_data/
 
-__pycache__/
+*.pyc
 
-detectors/__pycache__/
-
-segmentors/__pycache__/
-
-removers/__pycache__/
