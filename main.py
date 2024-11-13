@@ -4,7 +4,7 @@ from video_processor.detection_frequency import DetectionFrequency, FixedFrequen
 from video_processor.processor import BenardSupressor
 from detectors import Detector, YOLODetector, RedCapDetector
 from segmentors import Segmentor, MaskRCNNSegmentor, YoloSegmentor
-from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover
+from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover, BetterLamaInpaintingRemover
 #from benard_suppressor import BenardSupressor
 
 
@@ -12,7 +12,7 @@ from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, Bl
 ######### Define the input and output paths ############
 ########################################################
 type = "video" # "video" or "photo"
-input = "_test_data/test_4.mp4"
+input = "_test_data/video/IMG_4802.mp4"
 output_folder = "_test_data/"
 ########################################################
  
@@ -34,7 +34,7 @@ def initialize_components():
     segmenter = YoloSegmentor(device='cuda')
 
     # To select between LAMA, Bluring and OpenCV inpainting remover
-    remover = LamaInpaintingRemover()
+    remover = BetterLamaInpaintingRemover()
 
     # To select between FixedFrequency and TimeFrequency
     frequency = FixedFrequency(1)

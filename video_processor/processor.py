@@ -49,6 +49,7 @@ class BenardSupressor():
             if self.frequency.select_next(frame_count):
                 
                 bounding_boxes, mask, final_frame = self.process_image(frame, debugging_folder, frame_count, debugging_frames_level)
+                frame_height, frame_width = frame.shape[:2]
 
                 if output_video is None:
                     processed_frame_height, processed_frame_width = final_frame.shape[:2]
@@ -56,9 +57,11 @@ class BenardSupressor():
                     output_video = cv2.VideoWriter(output_path, fourcc, fps, (processed_frame_width, processed_frame_height))
                     print(f"Output video properties: {processed_frame_width}x{processed_frame_height} @ {fps} FPS")
                     if debugging_video_level == 'Detector' or debugging_video_level == 'All':
-                        detector_video = cv2.VideoWriter(debugging_folder + 'detector.mp4', fourcc, fps, (processed_frame_width, processed_frame_height))
+                        detector_video = cv2.VideoWriter(debugging_folder + 'detector.mp4', fourcc, fps, (frame_width, frame_height))
+                    
                     if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
-                        segmentor_video = cv2.VideoWriter(debugging_folder + 'segmentor.mp4', fourcc, fps, (processed_frame_width, processed_frame_height))
+                        segmentor_video = cv2.VideoWriter(debugging_folder + 'segmentor.mp4', fourcc, fps, (frame_width, frame_height))
+                    
                     if debugging_video_level == 'All':
                         all_video = cv2.VideoWriter(debugging_folder + 'all.mp4', fourcc, fps, (processed_frame_width*2, processed_frame_height*2))
 
@@ -134,28 +137,42 @@ class BenardSupressor():
             cv2.imwrite(output_folder + f"all/frame_{frame_count if frame_count is not None else 0}.jpg", output_image)
    
         return bounding_boxes, mask, final_frame
-    
 
-    def stack_images(self, frame:np.array, boxed_frame:np.array, masked_frame:np.array, final_frame:np.array) -> np.array:
+    def stack_images(self, frame: np.array, boxed_frame: np.array, masked_frame: np.array, final_frame: np.array) -> np.array:
         """
         Stack the input images in a 2 by 2 shape, adding labels.
+    
         Parameters:
         - frame: The original frame.
         - boxed_frame: The frame with bounding boxes drawn.
         - masked_frame: The frame with masks drawn.
         - final_frame: The final frame with objects removed.
+    
         Returns:
-        - The stacked image.
+        - The stacked image with labels.
         """
-        working_frame = frame.copy()
+        # Find the maximum width and height among all frames
+        height = final_frame.shape[0]
+        width = final_frame.shape[1]
+
+        # Resize each frame to the maximum dimensions
+        resized_frame = cv2.resize(frame, (width, height))
+        resized_boxed_frame = cv2.resize(boxed_frame, (width, height))
+        resized_masked_frame = cv2.resize(masked_frame, (width, height))
+        resized_final_frame = cv2.resize(final_frame, (width, height))
+
+        # Add labels to each frame
         labels = ["Original Frame", "Boxed Frame", "Masked Frame", "Final Frame"]
-        self.add_label(working_frame, labels[0])
-        self.add_label(boxed_frame, labels[1])
-        self.add_label(masked_frame, labels[2])
-        self.add_label(final_frame, labels[3])
-        top_row = np.hstack([working_frame, boxed_frame])
-        bottom_row = np.hstack([masked_frame, final_frame])
+        self.add_label(resized_frame, labels[0])
+        self.add_label(resized_boxed_frame, labels[1])
+        self.add_label(resized_masked_frame, labels[2])
+        self.add_label(resized_final_frame, labels[3])
+
+        # Stack frames in a 2x2 grid
+        top_row = np.hstack([resized_frame, resized_boxed_frame])
+        bottom_row = np.hstack([resized_masked_frame, resized_final_frame])
         return np.vstack([top_row, bottom_row])
+
 
     @staticmethod
     def add_label(image, text, font_scale=1, thickness=2):
