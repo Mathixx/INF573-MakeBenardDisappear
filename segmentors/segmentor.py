@@ -21,7 +21,7 @@ class Segmentor(ABC):
         """
         pass
 
-    def draw_masks(self, frame: np.ndarray, masks: np.ndarray) -> np.ndarray:
+    def draw_masks(self, frame: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """
         Draw the masks on the frame.
         Parameters:
@@ -33,15 +33,12 @@ class Segmentor(ABC):
         """
         working_frame = frame.copy()
         # Add the masks to the frame by adding a transparent red layer
-        for mask in masks:
+        if mask is not None:
             # Resize mask if necessary to match the frame size
             if mask.shape[:2] != working_frame.shape[:2]:
-                mask = cv2.resize(mask, (working_frame.shape[1], working_frame.shape[0]))
+                raise Exception("Mask and frame sizes do not match.")
 
-            # If the mask is single-channel, convert it to a 3-channel (RGB) mask
-            if len(mask.shape) == 2:  # Grayscale mask
-                mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-
-            # Blend the mask with the frame, using a transparency factor
-            working_frame = cv2.addWeighted(working_frame, 1, mask, 0.5, 0)
+            red_overlay = np.zeros_like(working_frame)
+            red_overlay[:, :, 2] = mask
+            working_frame = cv2.addWeighted(working_frame, 1, red_overlay, 0.5, 0)
         return working_frame
