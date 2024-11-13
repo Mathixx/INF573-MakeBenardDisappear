@@ -3,7 +3,7 @@ import numpy as np
 from detectors import Detector
 
 class RedCapDetector(Detector):
-    def detect(self, frame: np.ndarray, hue_range=(0, 5), alt_hue_range=(170, 180), min_circularity=0.3, ratio=0.0002, min_saturation=100, min_value=100) -> list:
+    def detect(self, frame: np.ndarray, hue_range=(0, 5), alt_hue_range=(170, 180), min_circularity=0.325, ratio=0.0002, min_saturation=100, min_value=100) -> list:
         """
         Detect the region where the red cap is most likely located.
         Returns bounding boxes around regions that match the red cap color and shape criteria.
@@ -22,10 +22,6 @@ class RedCapDetector(Detector):
 
         # Convert the frame from BGR to HSV color space
         hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # # Fixed saturation and value thresholds
-        # min_saturation = 100
-        # min_value = 100
 
         # Create a mask manually based on the specified hue ranges
         mask1 = (

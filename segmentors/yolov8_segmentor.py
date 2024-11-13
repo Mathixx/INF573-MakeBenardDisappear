@@ -28,7 +28,24 @@ def extract_shadow_mask(person_mask):
     # Apply this mask to keep only the shadow below the middle y-coordinate
     shadow_mask = cv2.bitwise_or(dilated_person_mask1, dilated_person_mask)
 
-    return shadow_mask
+    # Find connected components in the shadow mask
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(shadow_mask, connectivity=8)
+
+    # Find the largest connected component, skipping the background (label 0)
+    max_label = 1  # Start with the first component
+    max_area = stats[1, cv2.CC_STAT_AREA] if num_labels > 1 else 0
+
+    for i in range(2, num_labels):  # Start from 2 to skip background and first component
+        area = stats[i, cv2.CC_STAT_AREA]
+        if area > max_area:
+            max_area = area
+            max_label = i
+
+    # Create a mask with only the largest component
+    largest_component_mask = np.zeros_like(shadow_mask)
+    largest_component_mask[labels == max_label] = 255
+
+    return largest_component_mask
 
 class YoloSegmentor(Segmentor):
     """
@@ -96,8 +113,9 @@ class YoloSegmentor(Segmentor):
             if best_mask is not None:
                 # Resize the mask to fit the bounding box size
                 best_mask_resized = cv2.resize(best_mask, (w, h), interpolation=cv2.INTER_NEAREST)
+                best_mask_resized = extract_shadow_mask(best_mask_resized)
 
                 # Place the resized mask back onto the original mask coordinates in final_mask
                 final_mask[y:y+h, x:x+w] = cv2.bitwise_or(final_mask[y:y+h, x:x+w], best_mask_resized)
 
-        return extract_shadow_mask(final_mask)
+        return final_mask
