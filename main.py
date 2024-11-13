@@ -1,4 +1,5 @@
 import time
+import cv2
 from video_processor.detection_frequency import DetectionFrequency, FixedFrequency, TimeFrequency
 from video_processor.processor import BenardSupressor
 from detectors import Detector, YOLODetector, RedCapDetector
@@ -11,7 +12,7 @@ from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, Bl
 ######### Define the input and output paths ############
 ########################################################
 type = "video" # "video" or "photo"
-input = "_test_data/test_3.mp4"
+input = "_test_data/test_4.mp4"
 output_folder = "_test_data/"
 ########################################################
  
@@ -58,7 +59,8 @@ def main():
         benard_supressor.process_video(input, output_folder, debugging_frames_level, debugging_video_level)
     elif type == 'photo':
         print("Processing photo...")
-        benard_supressor.process_image(input, output_folder, debugging_frames_level='All')
+        photo = cv2.imread(input)
+        benard_supressor.process_image(photo, output_folder, debugging_frames_level='All')
     else:
         raise ValueError("Invalid type. Choose between 'video' and 'photo'.")
     end = time.time()

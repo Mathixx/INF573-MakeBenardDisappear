@@ -59,6 +59,8 @@ class BenardSupressor():
                         detector_video = cv2.VideoWriter(debugging_folder + 'detector.mp4', fourcc, fps, (processed_frame_width, processed_frame_height))
                     if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
                         segmentor_video = cv2.VideoWriter(debugging_folder + 'segmentor.mp4', fourcc, fps, (processed_frame_width, processed_frame_height))
+                    if debugging_video_level == 'All':
+                        all_video = cv2.VideoWriter(debugging_folder + 'all.mp4', fourcc, fps, (processed_frame_width*2, processed_frame_height*2))
 
                 print(f"Processed frame {frame_count}")
 
@@ -69,6 +71,10 @@ class BenardSupressor():
                 if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
                     masked_frame = self.segmentor.draw_masks(frame, mask)
                     segmentor_video.write(masked_frame)
+
+                if debugging_video_level == 'All':
+                    output_image = self.stack_images(frame, boxed_frame, masked_frame, final_frame)
+                    all_video.write(output_image)
 
                 # Save the frame to the output video
                 output_video.write(final_frame)
@@ -124,7 +130,41 @@ class BenardSupressor():
             if not os.path.exists(output_folder + 'all/'):
                 os.makedirs(output_folder + 'all/')
 
-            cv2.imwrite(output_folder + f"all/frame_{frame_count if frame_count is not None else 0}.jpg", np.hstack([frame, boxed_frame, masked_frame, final_frame]))
+            output_image = self.stack_images(frame, boxed_frame, masked_frame, final_frame)
+            cv2.imwrite(output_folder + f"all/frame_{frame_count if frame_count is not None else 0}.jpg", output_image)
    
         return bounding_boxes, mask, final_frame
     
+
+    def stack_images(self, frame:np.array, boxed_frame:np.array, masked_frame:np.array, final_frame:np.array) -> np.array:
+        """
+        Stack the input images in a 2 by 2 shape, adding labels.
+        Parameters:
+        - frame: The original frame.
+        - boxed_frame: The frame with bounding boxes drawn.
+        - masked_frame: The frame with masks drawn.
+        - final_frame: The final frame with objects removed.
+        Returns:
+        - The stacked image.
+        """
+        working_frame = frame.copy()
+        labels = ["Original Frame", "Boxed Frame", "Masked Frame", "Final Frame"]
+        self.add_label(working_frame, labels[0])
+        self.add_label(boxed_frame, labels[1])
+        self.add_label(masked_frame, labels[2])
+        self.add_label(final_frame, labels[3])
+        top_row = np.hstack([working_frame, boxed_frame])
+        bottom_row = np.hstack([masked_frame, final_frame])
+        return np.vstack([top_row, bottom_row])
+
+    @staticmethod
+    def add_label(image, text, font_scale=1, thickness=2):
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        color = (255, 255, 255)  # White color for text
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+        
+        # Place text at the top center of the image
+        text_x = (image.shape[1] - text_width) // 2
+        text_y = text_height + 10  # Slight padding from the top
+        cv2.putText(image, text, (text_x, text_y), font, font_scale, color, thickness, cv2.LINE_AA)
+
