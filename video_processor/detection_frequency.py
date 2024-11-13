@@ -24,7 +24,7 @@ class FixedFrequency(DetectionFrequency):
         self.frequency = frequency
 
     def select_next(self, actual_frame: int) -> int:
-        if actual_frame - self.last >= self.frequency:
+        if actual_frame - self.last >= self.frequency or self.last == -1:
             self.last = actual_frame
             return True
         return False
