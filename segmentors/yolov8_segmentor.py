@@ -55,7 +55,7 @@ class YoloSegmentor(Segmentor):
         Parameters:
         - frame: The input image (as a numpy array).
         - bounding_boxes: A list of bounding boxes where the object is supposed to be located in format [(x, y, w, h)].
-        
+    
         Returns:
         - Segmentation mask (numpy array).
         """
@@ -67,40 +67,37 @@ class YoloSegmentor(Segmentor):
         # Convert the frame (numpy array) to a format Ikomia can process
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # we have to run the workflow on the input image but only in the parts specified by the bounding boxes
-        masks = []
+        # Initialize an empty mask of the same size as the original frame
+        final_mask = np.zeros(frame.shape[:2], dtype=np.uint8)
 
-        # Assume 'image' is your input image and 'bounding_boxes' is a list of bounding boxes
-        masked_image = frame_rgb.copy()  # Start with a copy of the original image
-
-        # Set everything in the image to black initially
-        masked_image[:, :] = 0
-
-        # Loop through each bounding box and fill in only those areas
+        # Loop through each bounding box
         for bbox in bounding_boxes:
             x, y, w, h = bbox
-            # Copy the pixels within the bounding box from the original image to the masked image
-            masked_image[y:y+h, x:x+w] = frame_rgb[y:y+h, x:x+w]
 
-        # Run the workflow on the final masked image
-        self.workflow.run_on(masked_image)
+            # Crop the region of interest
+            cropped_region = frame_rgb[y:y+h, x:x+w]
 
-        # Retrieve results from the segmentor
-        masks = []
-        res = self.segmentor.get_results()
-        for obj in res.get_objects():
-            if obj.label == 'person':
-                mask = obj.mask
-                masks.append(mask)
+            # Run the workflow on the cropped region
+            self.workflow.run_on(cropped_region)
 
-        # Combine the masks
-        mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-        for m in masks:
-            mask = cv2.bitwise_or(mask, m)
+            # Retrieve results from the segmentor for this cropped region
+            res = self.segmentor.get_results()
+        
+            # Find the human (label: 'person') with the highest confidence in this region
+            highest_confidence = 0
+            best_mask = None
 
-        return extract_shadow_mask(mask)
+            for obj in res.get_objects():
+                if obj.label == 'person' and obj.confidence > highest_confidence:
+                    highest_confidence = obj.confidence
+                    best_mask = obj.mask
 
+            # If we have found a mask with the highest confidence, resize and place it in the final mask
+            if best_mask is not None:
+                # Resize the mask to fit the bounding box size
+                best_mask_resized = cv2.resize(best_mask, (w, h), interpolation=cv2.INTER_NEAREST)
 
+                # Place the resized mask back onto the original mask coordinates in final_mask
+                final_mask[y:y+h, x:x+w] = cv2.bitwise_or(final_mask[y:y+h, x:x+w], best_mask_resized)
 
-
-
+        return extract_shadow_mask(final_mask)
