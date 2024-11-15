@@ -20,7 +20,7 @@ class LiveBenardSupressor():
             raise ValueError("Background subtraction method must be 'MOG2' or 'KNN'")
         self.frequency = frequency
 
-    def process_video(self, input_path: str, output_folder: str, debugging_frames_level='None', debugging_video_level='None') -> None:
+    def process_live(self, output_folder: str, debugging_frames_level='None', debugging_video_level='None') -> None:
         """
         Process a video to remove objects detected by the detector.
         Parameters:
@@ -29,9 +29,11 @@ class LiveBenardSupressor():
         - debugging_frames_level: The level of debugging for the frames ('None', 'Detector', 'Segmentor', 'Remover', 'All').
         - debugging_video_level: The level of debugging for the video ('None', 'Detector', 'Segmentor', 'All').
         """
-        video = cv2.VideoCapture(input_path)
+        # Open the default camera (webcam)
+        video = cv2.VideoCapture(0)  # 0 is the default camera. Adjust if using a different camera.
         if not video.isOpened():
-            raise FileNotFoundError("Could not open video file")
+            raise RuntimeError("Cannot open live camera feed")
+
         original_frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
         original_frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(video.get(cv2.CAP_PROP_FPS))
