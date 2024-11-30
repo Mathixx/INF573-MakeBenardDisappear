@@ -6,6 +6,7 @@ from detectors import Detector, YOLODetector, RedCapDetector
 from segmentors import Segmentor, MaskRCNNSegmentor, YoloSegmentor
 from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover
 
+
 class BenardSupressor():
     def __init__(self, detector:Detector, segmentor:Segmentor, remover:Remover, frequency: DetectionFrequency) -> None:
         self.detector = detector
@@ -101,14 +102,20 @@ class BenardSupressor():
         - The processed image with objects removed.
         """
         # Detect objects in the frame
-        bounding_boxes = self.detector.detect(frame)
+        bounding_boxes, human_boxes, red_cap_boxes = self.detector.detect(frame)
 
-        if debugging_frames_level == 'Detector' or debugging_frames_level == 'All':
+        if debugging_frames_level == 'Detector' or debugging_frames_level == 'All' or debugging_frames_level == 'complete_detector':
             if not os.path.exists(output_folder + 'detector/'):
                 os.makedirs(output_folder + 'detector/')
-
-            boxed_frame = self.detector.draw_boxes(frame, bounding_boxes)
+            if debugging_frames_level == 'complete_detector':
+                if not os.path.exists(output_folder + 'detector/human_boxed/'):
+                    os.makedirs(output_folder + 'detector/human_boxed/')
+                    os.makedirs(output_folder + 'detector/red_cap_boxed/')
+            boxed_frame, human_boxed_frame, red_cap_frame = self.detector.draw_boxes(frame, bounding_boxes, human_boxes, red_cap_boxes, debugging_frames_level)
             cv2.imwrite(output_folder + f"detector/frame_{frame_count}.jpg", boxed_frame)
+            if debugging_frames_level == 'complete_detector':
+                cv2.imwrite(output_folder + f"detector/human_boxed/frame_{frame_count}.jpg", human_boxed_frame)
+                cv2.imwrite(output_folder + f"detector/red_cap_boxed/frame_{frame_count}.jpg", red_cap_frame)
 
         # Segment the objects in the frame
         mask = self.segmentor.segment(frame, bounding_boxes)

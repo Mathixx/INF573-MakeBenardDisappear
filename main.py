@@ -6,20 +6,20 @@ from video_processor.processor import BenardSupressor
 from live_processor.processor import LiveBenardSupressor
 from detectors import Detector, YOLODetector, RedCapDetector
 from segmentors import Segmentor, MaskRCNNSegmentor, YoloSegmentor
-from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover, BetterLamaInpaintingRemover
+from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover #, BetterLamaInpaintingRemover
 
 ########################################################
 ######### Define the input and output paths ############
 ########################################################
 # These are used as defaults; you can override them via arguments.
-default_input = "_test_data/video/IMG_4802.mp4"
+default_input = "_test_data/test_2.mp4"
 default_output_folder = "_test_data/"
 ########################################################
 
 ########################################################
 ################ Debugging options #####################
 ########################################################
-default_debugging_frames_level = 'None'  # 'None', 'Detector', 'Segmentor', 'Remover', 'All'
+default_debugging_frames_level = 'complete_detector'  # 'None', 'Detector', 'Segmentor', 'Remover', 'All', 'complete_detector'
 default_debugging_video_level = 'None'  # 'None', 'Detector', 'Segmentor', 'All'
 ########################################################
 
@@ -35,7 +35,7 @@ def initialize_components(type:str):
 
     if type == 'video' or type == 'photo':
         # To select between LAMA, Blurring and OpenCV inpainting remover
-        remover = BetterLamaInpaintingRemover()
+        remover = LamaInpaintingRemover()
     else:
         remover = None
 
@@ -58,7 +58,7 @@ def main():
                         help="Input path for video or photo. Ignored if type is 'live'.")
     parser.add_argument('--output', type=str, default=default_output_folder,
                         help="Output folder for processed files.")
-    parser.add_argument('--debug_frames', type=str, choices=['None', 'Detector', 'Segmentor', 'Remover', 'All'],
+    parser.add_argument('--debug_frames', type=str, choices=['None', 'Detector', 'Segmentor', 'Remover', 'All', 'complete_detector'],
                         default=default_debugging_frames_level,
                         help="Level of debugging for individual frames.")
     parser.add_argument('--debug_video', type=str, choices=['None', 'Detector', 'Segmentor', 'All'],

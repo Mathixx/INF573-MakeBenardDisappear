@@ -28,6 +28,7 @@ class YOLODetector(Detector):
 
         # Add the YOL task (using Ikomia's built-in YOLOv7 model task)
         self.detector = self.workflow.add_task(name="infer_yolo_v7", auto_connect=True)
+        self.red_cap_detector = RedCapDetector()
 
         self.detector.set_parameters({
             "conf_thres": str(conf_threshold),
@@ -75,11 +76,9 @@ class YOLODetector(Detector):
         - A list of bounding boxes in the form (x, y, w, h) for detected red caps.
           If no cap is found, returns an empty list.
         """
-        # Initialize the red cap detector
-        red_cap_detector = RedCapDetector()
 
         # Detect the red cap in the frame
-        red_cap_boxes = red_cap_detector.detect(frame)
+        red_cap_boxes = self.red_cap_detector.detect_and_track(frame)
 
         return red_cap_boxes
     
@@ -146,4 +145,4 @@ class YOLODetector(Detector):
         # Find the human boxes that intersect the most with each red cap box
         intersecting_humans = find_intersecting_human(red_cap_Boxes, human_Boxes)
 
-        return intersecting_humans
+        return intersecting_humans, human_Boxes, red_cap_Boxes

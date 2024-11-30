@@ -1,8 +1,14 @@
 import cv2
 import numpy as np
 from detectors import Detector
+from trackers import MultiObjectTracker
 
 class RedCapDetector(Detector):
+    def __init__(self):
+        self.tracker = MultiObjectTracker(tracker_type="CSRT")
+        self.frame_count = 0
+        self.reinitialize_interval = 10  # Reinitialize every N frames
+
     def detect(self, frame: np.ndarray, hue_range=(0, 5), alt_hue_range=(170, 180), min_circularity=0.325, ratio=0.0002, min_saturation=100, min_value=100) -> list:
         """
         Detect the region where the red cap is most likely located.
@@ -68,3 +74,25 @@ class RedCapDetector(Detector):
                 bounding_boxes.append((x, y, w, h))
 
         return bounding_boxes
+    
+
+    def detect_and_track(self, frame: np.ndarray) -> list:
+        """
+        Detect red caps and track them across frames.
+        Parameters:
+        - frame: Current video frame (numpy array).
+        Returns:
+        - A list of tracked bounding boxes [(x, y, w, h)].
+        """
+        self.frame_count += 1
+
+        if self.frame_count % self.reinitialize_interval == 0:
+            # Re-detect red caps and reset trackers
+            red_cap_boxes = self.detect(frame)
+            self.tracker = MultiObjectTracker(tracker_type="CSRT")
+            for bbox in red_cap_boxes:
+                self.tracker.add_tracker(frame, bbox)
+
+        # Update trackers
+        tracked_boxes = self.tracker.update(frame)
+        return tracked_boxes
