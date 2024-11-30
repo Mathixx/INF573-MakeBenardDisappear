@@ -8,7 +8,9 @@ ultralytics
 wheel
 modelscope
 addict
-datasets
+datasets==3.0.1
 oss2
 mmtrack
+mmcv
+simplejsom
 ### Maybe seaborn ###

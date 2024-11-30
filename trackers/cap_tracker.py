@@ -10,9 +10,10 @@ class RedCapTracker(BaseTracker):
         Parameters:
         - device: Device to run the tracker on ('cuda:0' or 'cpu').
         """
-        self.tracker = init_model('trackers/stark_st2_r50_50e_lasot.py')
+        self.tracker = init_model('trackers/stark_st2_r50_50e_lasot.py', device=device)
         self.tracking = False
         self.bbox = None
+        self.count = 0
 
     def init(self, frame, bbox):
         """
@@ -24,7 +25,6 @@ class RedCapTracker(BaseTracker):
         """
         self.tracker.initialize(frame, bbox)
         self.tracking = True
-        self.detector_found_object = True
         self.bbox = bbox
         self.count = 0
 
@@ -38,22 +38,12 @@ class RedCapTracker(BaseTracker):
         Returns:
         - bbox: The tracked bounding box (x, y, w, h) or None if tracking failed.
         """
-        # Try detecting the object first
-        detected_bbox = self.detector_found_object
-
-        if detected_bbox:
-            # If the detector finds the object, update the tracker and return the bbox
-            self.init(frame, detected_bbox)
-            return detected_bbox
-
-        # If detection fails, use the tracker
         if self.tracking:
             result = inference_sot(self.tracker, frame, None)
             self.bbox = result.get('track_results', None)
-            count += 1
+            self.count += 1
 
-            # Stop tracking if the tracker fails
-            if self.bbox is None or count > 15:
+            if self.bbox is None or self.count > 15:
                 self.tracking = False
 
         return self.bbox

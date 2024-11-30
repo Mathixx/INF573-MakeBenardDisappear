@@ -93,6 +93,7 @@ class YOLODetector(Detector):
         """
         # Detect humans in the frame
         human_Boxes = self.human_detect(frame)
+        print("detected humans")
 
         # Detect red caps in the frame
         red_cap_Boxes = self.red_cap_detect(frame)

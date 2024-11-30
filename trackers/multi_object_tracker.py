@@ -1,4 +1,3 @@
-# trackers/multi_object_tracker.py
 from .open_cv_trackers import OpenCVTracker
 
 class MultiObjectTracker:

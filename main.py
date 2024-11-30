@@ -6,21 +6,21 @@ from video_processor.processor import BenardSupressor
 from live_processor.processor import LiveBenardSupressor
 from detectors import Detector, YOLODetector, RedCapDetector
 from segmentors import Segmentor, MaskRCNNSegmentor, YoloSegmentor
-from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover #, BetterLamaInpaintingRemover
+from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, BlurringRemover, BetterLamaInpaintingRemover
 
 ########################################################
 ######### Define the input and output paths ############
 ########################################################
 # These are used as defaults; you can override them via arguments.
-default_input = "_test_data/test_2.mp4"
-default_output_folder = "_test_data/"
+default_input = "data/mathias.p/_test_data/video/IMG_4800.mp4"
+default_output_folder = "data/mathias.p/_test_data/output/"
 ########################################################
 
 ########################################################
 ################ Debugging options #####################
 ########################################################
 default_debugging_frames_level = 'complete_detector'  # 'None', 'Detector', 'Segmentor', 'Remover', 'All', 'complete_detector'
-default_debugging_video_level = 'None'  # 'None', 'Detector', 'Segmentor', 'All'
+default_debugging_video_level = 'All'  # 'None', 'Detector', 'Segmentor', 'All'
 ########################################################
 
 ########################################################

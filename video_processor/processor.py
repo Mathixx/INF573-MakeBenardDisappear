@@ -48,8 +48,11 @@ class BenardSupressor():
                 break
 
             if self.frequency.select_next(frame_count):
+                print("\n\n")
+                print(f"Processed frame {frame_count}")
                 
                 bounding_boxes, mask, final_frame = self.process_image(frame, debugging_folder, frame_count, debugging_frames_level)
+                
                 frame_height, frame_width = frame.shape[:2]
 
                 if output_video is None:
@@ -65,8 +68,6 @@ class BenardSupressor():
                     
                     if debugging_video_level == 'All':
                         all_video = cv2.VideoWriter(debugging_folder + 'all.mp4', fourcc, fps, (processed_frame_width*2, processed_frame_height*2))
-
-                print(f"Processed frame {frame_count}")
 
                 if debugging_video_level == 'Detector' or debugging_video_level == 'All':
                     boxed_frame = self.detector.draw_boxes(frame, bounding_boxes)
@@ -112,6 +113,7 @@ class BenardSupressor():
                     os.makedirs(output_folder + 'detector/human_boxed/')
                     os.makedirs(output_folder + 'detector/red_cap_boxed/')
             boxed_frame, human_boxed_frame, red_cap_frame = self.detector.draw_boxes(frame, bounding_boxes, human_boxes, red_cap_boxes, debugging_frames_level)
+            
             cv2.imwrite(output_folder + f"detector/frame_{frame_count}.jpg", boxed_frame)
             if debugging_frames_level == 'complete_detector':
                 cv2.imwrite(output_folder + f"detector/human_boxed/frame_{frame_count}.jpg", human_boxed_frame)
