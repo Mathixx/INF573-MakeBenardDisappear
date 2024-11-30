@@ -1,5 +1,6 @@
 ikomia_env/
 Ikomia_venv/
+data/
 
 _test_data/
 *.pyc

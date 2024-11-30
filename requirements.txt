@@ -1,4 +1,4 @@
-python==3.9.0
+# python==3.9.19
 opencv-python
 ikomia
 simple_lama_inpainting
@@ -10,4 +10,5 @@ modelscope
 addict
 datasets
 oss2
+mmtrack
 ### Maybe seaborn ###
