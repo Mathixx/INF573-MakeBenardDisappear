@@ -7,8 +7,8 @@ class OpenCVTracker(BaseTracker):
         self.initialized = False
 
         trackers = {
-            "MOSSE": lambda: cv2.TrackerMOSSE_create(),
-            "KCF": lambda: cv2.TrackerKCF_create(),
+            "MOSSE": lambda: cv2.legacy.TrackerMOSSE_create(),
+            "KCF": lambda: cv2.legacy.TrackerKCF_create(),
         }
 
         if tracker_type not in trackers:

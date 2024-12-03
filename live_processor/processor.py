@@ -12,12 +12,12 @@ class LiveBenardSupressor():
     def __init__(self, detector:Detector, segmentor:Segmentor, background_sub:str, frequency: DetectionFrequency) -> None:
         self.detector = detector
         self.segmentor = segmentor
-        if background_sub == 'MOG2':
-            self.backSub = cv2.createBackgroundSubtractorMOG2()
-        elif background_sub == 'KNN':
-            self.backSub = cv2.createBackgroundSubtractorKNN()
-        else:
-            raise ValueError("Background subtraction method must be 'MOG2' or 'KNN'")
+        # if background_sub == 'MOG2':
+        #     self.backSub = cv2.createBackgroundSubtractorMOG2()
+        # elif background_sub == 'KNN':
+        #     self.backSub = cv2.createBackgroundSubtractorKNN()
+        # else:
+        #     raise ValueError("Background subtraction method must be 'MOG2' or 'KNN'")
         self.frequency = frequency
 
     def process_live(self, output_folder: str, debugging_frames_level='None', debugging_video_level='None') -> None:
@@ -40,9 +40,9 @@ class LiveBenardSupressor():
         print(f"Original video properties: {original_frame_width}x{original_frame_height} @ {fps} FPS")
 
     
-        input_filename = os.path.splitext(os.path.basename(input_path))[0]
-        output_folder = output_folder + f"{input_filename}_output/"
-        output_path = output_folder + f"{input_filename}_processed.mp4"
+        #input_filename = os.path.splitext(os.path.basename(input_path))[0]
+        output_folder = output_folder + f"live_output/"
+        #output_path = output_folder + f"{input_filename}_processed.mp4"
         debugging_folder = output_folder + 'debugging/'
         if not os.path.exists(debugging_folder):
             os.makedirs(debugging_folder)
@@ -55,51 +55,21 @@ class LiveBenardSupressor():
             if not ret:
                 break
 
-            if self.frequency.select_next(frame_count):
-                self.backSub.apply(frame)
+            # self.backSub.apply(frame)
 
-                bounding_boxes, mask, final_frame = self.process_image(frame, debugging_folder, frame_count, debugging_frames_level)
-                frame_height, frame_width = frame.shape[:2]
+            bounding_boxes, mask, final_frame = self.process_image(frame, debugging_folder, frame_count, debugging_frames_level)
 
-                if output_video is None:
-                    processed_frame_height, processed_frame_width = final_frame.shape[:2]
-                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                    output_video = cv2.VideoWriter(output_path, fourcc, fps, (processed_frame_width, processed_frame_height))
-                    print(f"Output video properties: {processed_frame_width}x{processed_frame_height} @ {fps} FPS")
-                    if debugging_video_level == 'Detector' or debugging_video_level == 'All':
-                        detector_video = cv2.VideoWriter(debugging_folder + 'detector.mp4', fourcc, fps, (frame_width, frame_height))
-                    
-                    if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
-                        segmentor_video = cv2.VideoWriter(debugging_folder + 'segmentor.mp4', fourcc, fps, (frame_width, frame_height))
-                    
-                    if debugging_video_level == 'All':
-                        all_video = cv2.VideoWriter(debugging_folder + 'all.mp4', fourcc, fps, (processed_frame_width*2, processed_frame_height*2))
+            print(f"Processed frame {frame_count}")
 
-                print(f"Processed frame {frame_count}")
 
-                if debugging_video_level == 'Detector' or debugging_video_level == 'All':
-                    boxed_frame = self.detector.draw_boxes(frame, bounding_boxes)
-                    detector_video.write(boxed_frame)
-
-                if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
-                    masked_frame = self.segmentor.draw_masks(frame, mask)
-                    segmentor_video.write(masked_frame)
-
-                if debugging_video_level == 'All':
-                    output_image = self.stack_images(frame, boxed_frame, masked_frame, final_frame)
-                    all_video.write(output_image)
-
-                # Save the frame to the output video
-                output_video.write(final_frame)
+            # Press 'q' to quit
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
             frame_count += 1
 
         video.release()
-        output_video.release()
-        if debugging_video_level == 'Detector' or debugging_video_level == 'All':
-            detector_video.release()
-        if debugging_video_level == 'Segmentor' or debugging_video_level == 'All':
-            segmentor_video.release()
+        cv2.destroyAllWindows()
 
     def process_image(self, frame:np.array, output_folder, frame_count:int=None, debugging_frames_level='None') -> np.array:
         """
@@ -111,42 +81,29 @@ class LiveBenardSupressor():
         - The processed image with objects removed.
         """
         # Detect objects in the frame
-        bounding_boxes = self.detector.detect(frame)
+        bounding_boxes, human_Boxes, red_cap_Boxes = self.detector.detect(frame)
 
-        if debugging_frames_level == 'Detector' or debugging_frames_level == 'All':
-            if not os.path.exists(output_folder + 'detector/'):
-                os.makedirs(output_folder + 'detector/')
-
-            boxed_frame = self.detector.draw_boxes(frame, bounding_boxes)
-            cv2.imwrite(output_folder + f"detector/frame_{frame_count}.jpg", boxed_frame)
+        boxed_frame = self.detector.draw_boxes(frame, bounding_boxes)
 
         # Segment the objects in the frame
         mask = self.segmentor.segment(frame, bounding_boxes)
 
-        if debugging_frames_level == 'Segmentor' or debugging_frames_level == 'All':
-            if not os.path.exists(output_folder + 'segmentor/'):
-                os.makedirs(output_folder + 'segmentor/')
-
-            masked_frame = self.segmentor.draw_masks(frame, mask)
-            cv2.imwrite(output_folder + f"segmentor/frame_{frame_count if frame_count is not None else 0}.jpg", masked_frame)
-
+        masked_frame = self.segmentor.draw_masks(frame, mask)
+        
         # Remove the objects from the frame
         # replace the mask with the background subtraction mask
-        final_frame = cv2.bitwise_and(frame, self.backSub.getBackgroundImage(), mask=mask)
+        # final_frame = cv2.bitwise_and(frame, self.backSub.getBackgroundImage(), mask=mask)
+        final_frame = frame
 
-        if debugging_frames_level == 'Remover' or debugging_frames_level == 'All':
-            if not os.path.exists(output_folder + 'remover/'):
-                os.makedirs(output_folder + 'remover/')
+        #combined_frame = self.stack_images(frame, boxed_frame, masked_frame, final_frame)
 
-            cv2.imwrite(output_folder + f"remover/frame_{frame_count if frame_count is not None else 0}.jpg", final_frame)
+        # Display the combined frame
+        cv2.imshow('Initial Video', frame)
+        cv2.imshow('Boxed Video', boxed_frame)
+        cv2.imshow('Masked Video', masked_frame)
+        cv2.imshow('Final Video', final_frame)
+        #cv2.resizeWindow('All Videos', int(1920/2), int(1080/2))
 
-        if debugging_frames_level == 'All':
-            if not os.path.exists(output_folder + 'all/'):
-                os.makedirs(output_folder + 'all/')
-
-            output_image = self.stack_images(frame, boxed_frame, masked_frame, final_frame)
-            cv2.imwrite(output_folder + f"all/frame_{frame_count if frame_count is not None else 0}.jpg", output_image)
-   
         return bounding_boxes, mask, final_frame
 
     def stack_images(self, frame: np.array, boxed_frame: np.array, masked_frame: np.array, final_frame: np.array) -> np.array:

@@ -97,6 +97,7 @@ class YOLODetector(Detector):
 
         # Detect red caps in the frame
         red_cap_Boxes = self.red_cap_detect(frame)
+        print("detected red caps :", red_cap_Boxes)
 
         def find_intersecting_human(red_cap_boxes, human_boxes):
             """
@@ -145,5 +146,6 @@ class YOLODetector(Detector):
 
         # Find the human boxes that intersect the most with each red cap box
         intersecting_humans = find_intersecting_human(red_cap_Boxes, human_Boxes)
+        print("intersecting humans :", intersecting_humans)
 
         return intersecting_humans, human_Boxes, red_cap_Boxes
