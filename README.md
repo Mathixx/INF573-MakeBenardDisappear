@@ -92,3 +92,8 @@ Installer les requirements de yolov5 : pip install -r requirements.txt dans le f
 - **Color-Based Detection**: HSV format is preferred when performing color thresholding because it separates color information (hue) from intensity (saturation and value), making color filtering easier.
 
 For your project, if you load the image using OpenCV, you'll need to convert it from BGR to RGB before using models like YOLOv5. If you're performing color-based detection (like detecting a red cap), you'll likely convert from BGR to HSV.
+
+
+
+<!-- export MODELSCOPE_LOG_LEVEL=40 -->
+export IKOMIA_LOG_LEVEL=ERROR

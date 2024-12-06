@@ -1,6 +1,7 @@
 import time
 import argparse
 import cv2
+import logging
 from video_processor.detection_frequency import DetectionFrequency, FixedFrequency, TimeFrequency
 from video_processor.processor import BenardSupressor
 from live_processor.processor import LiveBenardSupressor
@@ -12,14 +13,14 @@ from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, Bl
 ######### Define the input and output paths ############
 ########################################################
 # These are used as defaults; you can override them via arguments.
-default_input = "data/mathias.p/_test_data/video/IMG_4800.mp4"
-default_output_folder = "data/mathias.p/_test_data/output/"
+default_input = "data/mathias.p/INF573_data/video/red_cap_video.mp4"
+default_output_folder = "data/mathias.p/INF573_data/output/"
 ########################################################
 
 ########################################################
 ################ Debugging options #####################
 ########################################################
-default_debugging_frames_level = 'complete_detector'  # 'None', 'Detector', 'Segmentor', 'Remover', 'All', 'complete_detector'
+default_debugging_frames_level = 'All'  # 'None', 'Detector', 'Segmentor', 'Remover', 'All', 'complete_detector'
 default_debugging_video_level = 'All'  # 'None', 'Detector', 'Segmentor', 'All'
 ########################################################
 
@@ -35,7 +36,7 @@ def initialize_components(type:str):
 
     if type == 'video' or type == 'photo':
         # To select between LAMA, Blurring and OpenCV inpainting remover
-        remover = LamaInpaintingRemover()
+        remover = BetterLamaInpaintingRemover()
     else:
         remover = None
 
@@ -47,6 +48,7 @@ def initialize_components(type:str):
 ########################################################
 ########################################################
 
+logging.basicConfig(level=logging.INFO)
 
 def main():
     parser = argparse.ArgumentParser(description="Process video, photo, or live feed with Benard Supressor.")
@@ -67,32 +69,33 @@ def main():
 
     args = parser.parse_args()
 
-    print("Selected type: ", args.type)
-    print("Input path: ", args.input)
-    print("Output folder: ", args.output)
+    logging.info("Starting Benard Supressor...")
+    logging.info(f"Selected type: {args.type}")
+    logging.info(f"Input path: {args.input}")
+    logging.info(f"Output folder: {args.output}")
 
-    print("Initializing components...\n")
+    logging.info("Initializing components...\n")
     detector, segmenter, remover, frequency = initialize_components(type=args.type)
     
     if args.type == 'video':
         benard_supressor = BenardSupressor(detector, segmenter, remover, frequency)
-        print("Initialization done")
+        logging.debug("Initialization done")
 
         start = time.time()
 
-        print("Processing video...")
+        logging.info("Processing video...")
         benard_supressor.process_video(args.input, args.output, args.debug_frames, args.debug_video)
     elif args.type == 'photo':
         benard_supressor = BenardSupressor(detector, segmenter, remover, frequency)
-        print("Initialization done")
+        logging.debug("Initialization done")
 
         start = time.time()
 
-        print("Processing photo...")
+        logging.debug("Processing photo...")
         photo = cv2.imread(args.input)
         benard_supressor.process_image(photo, args.output, debugging_frames_level=args.debug_frames)
     elif args.type == 'live':
-        print("Processing live feed...")
+        logging.debug("Processing live feed...")
         live_benard_supressor = LiveBenardSupressor(detector, segmenter, 'MOG2', frequency)
 
         start = time.time()
@@ -102,7 +105,7 @@ def main():
         raise ValueError("Invalid type. Choose between 'video', 'photo', or 'live'.")
     
     end = time.time()
-    print("Processing time: ", end - start)
+    logging.info(f"Processing time: {end - start}")
 
 if __name__ == "__main__":
     main()

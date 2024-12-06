@@ -1,5 +1,6 @@
 import cv2
 import os
+import logging
 import numpy as np
 from .detection_frequency import DetectionFrequency, FixedFrequency, TimeFrequency
 from detectors import Detector, YOLODetector, RedCapDetector
@@ -24,12 +25,13 @@ class BenardSupressor():
         - debugging_video_level: The level of debugging for the video ('None', 'Detector', 'Segmentor', 'All').
         """
         video = cv2.VideoCapture(input_path)
+        total_frame = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         if not video.isOpened():
             raise FileNotFoundError("Could not open video file")
         original_frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
         original_frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(video.get(cv2.CAP_PROP_FPS))
-        print(f"Original video properties: {original_frame_width}x{original_frame_height} @ {fps} FPS")
+        logging.debug(f"Original video properties: {original_frame_width}x{original_frame_height} @ {fps} FPS")
 
     
         input_filename = os.path.splitext(os.path.basename(input_path))[0]
@@ -48,8 +50,8 @@ class BenardSupressor():
                 break
 
             if self.frequency.select_next(frame_count):
-                print("\n\n")
-                print(f"Processed frame {frame_count}")
+                logging.info("\n")
+                logging.info(f"Processed frame {frame_count} out of {total_frame}")
                 
                 bounding_boxes, mask, final_frame = self.process_image(frame, debugging_folder, frame_count, debugging_frames_level)
                 
@@ -59,7 +61,7 @@ class BenardSupressor():
                     processed_frame_height, processed_frame_width = final_frame.shape[:2]
                     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                     output_video = cv2.VideoWriter(output_path, fourcc, fps, (processed_frame_width, processed_frame_height))
-                    print(f"Output video properties: {processed_frame_width}x{processed_frame_height} @ {fps} FPS")
+                    logging.debug(f"Output video properties: {processed_frame_width}x{processed_frame_height} @ {fps} FPS")
                     if debugging_video_level == 'Detector' or debugging_video_level == 'All':
                         detector_video = cv2.VideoWriter(debugging_folder + 'detector.mp4', fourcc, fps, (frame_width, frame_height))
                     

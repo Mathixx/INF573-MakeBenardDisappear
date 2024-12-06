@@ -1,5 +1,6 @@
 import cv2
 import os
+import logging
 import numpy as np
 from detectors import Detector
 from segmentors import Segmentor
@@ -12,12 +13,12 @@ class LiveBenardSupressor():
     def __init__(self, detector:Detector, segmentor:Segmentor, background_sub:str, frequency: DetectionFrequency) -> None:
         self.detector = detector
         self.segmentor = segmentor
-        # if background_sub == 'MOG2':
-        #     self.backSub = cv2.createBackgroundSubtractorMOG2()
-        # elif background_sub == 'KNN':
-        #     self.backSub = cv2.createBackgroundSubtractorKNN()
-        # else:
-        #     raise ValueError("Background subtraction method must be 'MOG2' or 'KNN'")
+        if background_sub == 'MOG2':
+            self.backSub = cv2.createBackgroundSubtractorMOG2()
+        elif background_sub == 'KNN':
+            self.backSub = cv2.createBackgroundSubtractorKNN()
+        else:
+            raise ValueError("Background subtraction method must be 'MOG2' or 'KNN'")
         self.frequency = frequency
 
     def process_live(self, output_folder: str, debugging_frames_level='None', debugging_video_level='None') -> None:
@@ -32,12 +33,13 @@ class LiveBenardSupressor():
         # Open the default camera (webcam)
         video = cv2.VideoCapture(0)  # 0 is the default camera. Adjust if using a different camera.
         if not video.isOpened():
+            logging.warning("Frame capture failed. Exiting.")
             raise RuntimeError("Cannot open live camera feed")
 
         original_frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
         original_frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(video.get(cv2.CAP_PROP_FPS))
-        print(f"Original video properties: {original_frame_width}x{original_frame_height} @ {fps} FPS")
+        logging.debug(f"Original video properties: {original_frame_width}x{original_frame_height} @ {fps} FPS")
 
     
         #input_filename = os.path.splitext(os.path.basename(input_path))[0]
@@ -55,12 +57,12 @@ class LiveBenardSupressor():
             if not ret:
                 break
 
-            # self.backSub.apply(frame)
+            # Feed the frame to backSub to update the background model
+            _ = self.backSub.apply(frame)  # Update background model
 
             bounding_boxes, mask, final_frame = self.process_image(frame, debugging_folder, frame_count, debugging_frames_level)
 
-            print(f"Processed frame {frame_count}")
-
+            logging.debug(f"Processed frame {frame_count}")
 
             # Press 'q' to quit
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -90,12 +92,20 @@ class LiveBenardSupressor():
 
         masked_frame = self.segmentor.draw_masks(frame, mask)
         
-        # Remove the objects from the frame
-        # replace the mask with the background subtraction mask
-        # final_frame = cv2.bitwise_and(frame, self.backSub.getBackgroundImage(), mask=mask)
-        final_frame = frame
+        # Replace the target individual's region with the background
+        background = self.backSub.getBackgroundImage()
+        if background is None:
+            logging.error("Background model is not initialized.")
+            return bounding_boxes, mask, frame
 
-        #combined_frame = self.stack_images(frame, boxed_frame, masked_frame, final_frame)
+        # Apply the mask to the background
+        background_cropped = cv2.bitwise_and(background, background, mask=mask)
+
+        # Apply the inverse mask to the original frame
+        frame_cropped = cv2.bitwise_and(frame, frame, mask=cv2.bitwise_not(mask))
+
+        # Combine the results
+        final_frame = cv2.add(frame_cropped, background_cropped)
 
         # Display the combined frame
         cv2.imshow('Initial Video', frame)

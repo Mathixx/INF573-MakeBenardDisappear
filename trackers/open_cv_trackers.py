@@ -1,5 +1,6 @@
 from .tracker import BaseTracker
 import cv2
+import logging
 
 class OpenCVTracker(BaseTracker):
     def __init__(self, tracker_type="KCF"):
@@ -30,7 +31,7 @@ class OpenCVTracker(BaseTracker):
             raise ValueError("Invalid frame provided for tracker initialization.")
         if bbox is None or len(bbox) != 4:
             raise ValueError(f"Invalid bounding box: {bbox}")
-        print(f"Initializing tracker with bbox: {bbox} and frame shape: {frame.shape}")
+        logging.debug(f"Initializing tracker with bbox: {bbox} and frame shape: {frame.shape}")
 
         self.tracker.init(frame, bbox)
         self.initialized = True
@@ -50,9 +51,9 @@ class OpenCVTracker(BaseTracker):
         if frame is None or frame.size == 0:
             raise ValueError("Invalid frame provided for tracker update.")
 
-        print(f"Updating tracker with frame shape: {frame.shape}")
+        logging.debug(f"Updating tracker with frame shape: {frame.shape}")
         success, bbox = self.tracker.update(frame)
         if not success:
-            print("Tracking failed.")
+            logging.info("Tracking failed.")
             return None
         return bbox

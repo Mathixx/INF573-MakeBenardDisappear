@@ -4,13 +4,15 @@ from detectors import RedCapDetector
 from ikomia.dataprocess.workflow import Workflow
 import numpy as np
 import cv2
+import logging
+import warnings
 
 # # Set the logging level to ERROR to suppress detailed YOLOv5 logs
-# logging.getLogger().setLevel(logging.ERROR)
+logging.getLogger().setLevel(logging.ERROR)
 
 # # Ignore specific warnings
-# warnings.filterwarnings("ignore", category=DeprecationWarning)
-# warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 class YOLODetector(Detector):
     def __init__(self, workflow=None, device='cpu',conf_threshold=0.6, iou_threshold=0.3):
@@ -93,11 +95,11 @@ class YOLODetector(Detector):
         """
         # Detect humans in the frame
         human_Boxes = self.human_detect(frame)
-        print("detected humans")
+        logging.debug("detected humans")
 
         # Detect red caps in the frame
         red_cap_Boxes = self.red_cap_detect(frame)
-        print("detected red caps :", red_cap_Boxes)
+        logging.debug(f"detected red caps : {red_cap_Boxes}")
 
         def find_intersecting_human(red_cap_boxes, human_boxes):
             """
@@ -146,6 +148,18 @@ class YOLODetector(Detector):
 
         # Find the human boxes that intersect the most with each red cap box
         intersecting_humans = find_intersecting_human(red_cap_Boxes, human_Boxes)
-        print("intersecting humans :", intersecting_humans)
+        logging.debug(f"intersecting humans : {intersecting_humans}")
+        
+        # Now I noticed that when the interesting human is found near the bottom of the frame, the bounding stops before the bottom of the frame and lets some part of the legs outisde the bounding box.
+        # I will try to fix this by extending the bounding box to the bottom of the frame.
+        # Extend bounding boxes to the bottom of the frame if close enough
+        for i, box in enumerate(intersecting_humans):
+            x, y, w, h = box
+            bottom_edge = y + h  # Current bottom of the box
+            threshold = h / 20  # Threshold as 1/10th of the height of the box
+
+            if frame.shape[0] - bottom_edge <= threshold:  # If within threshold from the bottom
+                h = frame.shape[0] - y  # Adjust the height to extend to the bottom
+                intersecting_humans[i] = (x, y, w, h)
 
         return intersecting_humans, human_Boxes, red_cap_Boxes

@@ -1,4 +1,5 @@
 import cv2
+import logging
 import numpy as np
 from detectors import Detector
 from trackers import OpenCVTracker
@@ -85,29 +86,29 @@ class RedCapDetector(Detector):
         return bounding_boxes
     
     def detect_and_track(self, frame: np.ndarray):
-        print(f"Processing frame, frame shape: {frame.shape}, dtype: {frame.dtype}")
+        logging.debug(f"Processing frame, frame shape: {frame.shape}, dtype: {frame.dtype}")
 
         # Detect red caps
         red_cap_boxes = self.detect(frame)
-        print(f"Detected red caps: {red_cap_boxes}")
+        logging.debug(f"Detected red caps: {red_cap_boxes}")
 
         if red_cap_boxes:
             bbox = red_cap_boxes[0]
             self.reinitialize_tracker(frame, bbox)
             return red_cap_boxes
 
-        print("No red caps detected. Using tracker fallback.")
+        logging.info("No red caps detected. Using tracker fallback.")
         if not self.tracker.initialized:
-            print("Tracker is not initialized. Cannot fallback.")
+            logging.info("Tracker is not initialized. Cannot fallback.")
             return []
 
         try:
             tracked_bbox = self.tracker.update(frame)
             if tracked_bbox:
-                print(f"Tracker successfully updated: {tracked_bbox}")
+                logging.debug(f"Tracker successfully updated: {tracked_bbox}")
                 return [tracked_bbox]
         except Exception as e:
-            print(f"Error updating tracker: {e}")
+            logging.error(f"Error updating tracker: {e}")
             self.tracker.initialized = False
 
         return []
@@ -120,9 +121,9 @@ class RedCapDetector(Detector):
             self.tracker = OpenCVTracker(tracker_type="KCF")  # Reset tracker
             self.tracker.init(frame, bbox)
             self.initialized = True
-            print(f"Tracker reinitialized with bbox: {bbox}")
+            logging.debug(f"Tracker reinitialized with bbox: {bbox}")
         except Exception as e:
-            print(f"Failed to reinitialize tracker: {e}")
+            logging.error(f"Failed to reinitialize tracker: {e}")
             self.initialized = False
 
 
