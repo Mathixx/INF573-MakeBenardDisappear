@@ -1,8 +1,16 @@
-python==3.9.0
+# python==3.9.19
 opencv-python
 ikomia
 simple_lama_inpainting
 jupyter
 torchvision
 ultralytics
+wheel
+modelscope
+addict
+datasets==3.0.1
+oss2
+mmtrack
+mmcv
+simplejsom
 ### Maybe seaborn ###

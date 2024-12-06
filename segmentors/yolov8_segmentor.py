@@ -13,7 +13,7 @@ def extract_shadow_mask(person_mask):
     dilated_person_mask = cv2.dilate(person_mask, kernel, iterations=5)
 
     # Dilate the person mask to find areas near the person that might contain the shadow
-    kernel1 = np.ones((8, 8), np.uint8)
+    kernel1 = np.ones((9, 9), np.uint8)
     dilated_person_mask1 = cv2.dilate(person_mask, kernel1, iterations=5)
 
     # Find the bounding box of the person in the mask

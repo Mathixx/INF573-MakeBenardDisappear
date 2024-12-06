@@ -1,11 +1,17 @@
 import numpy as np
 from PIL import Image
 import cv2
+import logging
+import warnings
 from removers import Remover
 from modelscope.outputs import OutputKeys
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 
+# Suppress logs from `modelscope`
+logging.getLogger("modelscope").setLevel(logging.ERROR)
+# Suppress all warnings
+warnings.filterwarnings("ignore")
 
 class BetterLamaInpaintingRemover(Remover):
     """

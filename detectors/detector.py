@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import cv2
 import numpy as np
 
 class Detector(ABC):
@@ -15,3 +16,36 @@ class Detector(ABC):
           If no cap is found, returns None.
         """
         pass
+    
+    def draw_boxes(self, frame: np.ndarray, bounding_boxes: np.ndarray, human_boxes=None, red_cap_boxes=None, debugging_frame_level=None) -> np.ndarray:
+        """
+        Draw the bounding boxes on the frame.
+
+        Parameters:
+        - frame: The input image (video frame) as a numpy array.
+        - bounding_boxes: The bounding boxes to draw on the frame.
+
+        Returns:
+        - The frame with the bounding boxes drawn.
+        """
+        working_frame = frame.copy()
+        for box in bounding_boxes:
+            x, y, w, h = box
+            cv2.rectangle(working_frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        if not red_cap_boxes and not human_boxes:
+            return working_frame
+        
+        human_boxed_frame = frame.copy()
+        red_cap_boxed_frame = frame.copy()
+        if debugging_frame_level == 'complete_detector':
+            for box in human_boxes:
+                x, y, w, h = box
+                cv2.rectangle(human_boxed_frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            for box in red_cap_boxes:
+                x, y, w, h = box
+                cv2.rectangle(red_cap_boxed_frame, (int(x), int(y)), (int(x+w), int(y+h)), (255, 0, 0), 2)
+            
+        return working_frame, human_boxed_frame, red_cap_boxed_frame
+    
+    
+
