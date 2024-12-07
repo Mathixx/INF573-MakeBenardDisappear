@@ -1,6 +1,7 @@
 ikomia_env/
 Ikomia_venv/
 data/
+mathias.p/
 
 _test_data/
 *.pyc
