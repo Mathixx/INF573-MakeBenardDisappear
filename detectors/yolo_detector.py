@@ -155,6 +155,9 @@ class YOLODetector(Detector):
         # Extend bounding boxes to the bottom of the frame if close enough
         for i, box in enumerate(intersecting_humans):
             x, y, w, h = box
+            # Have the box slighly extend to the bottom of the shoe
+            h += min(frame.shape[0] - y - h, 10)
+            
             bottom_edge = y + h  # Current bottom of the box
             threshold = h / 20  # Threshold as 1/10th of the height of the box
 
