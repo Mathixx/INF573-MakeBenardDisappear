@@ -185,4 +185,4 @@ class YOLODetector(Detector):
         Log the mean time spent on initializing and updating the tracker.
         """
         logging.info(f"Mean time spent on initializing tracker: {self.red_cap_detector.total_time_init_tracker / frame_count:.4f} seconds")
-        logging.info(f"Mean time spent on updating tracker: {self.red_cap_detector.total_time_update_tracker / self.red_cap_detector.red_cap_detected_with_tracker_count:.4f} seconds")
+        logging.info(f"Mean time spent on updating tracker: {self.red_cap_detector.total_time_update_tracker / self.red_cap_detector.red_cap_detected_with_tracker_count if self.red_cap_detector.red_cap_detected_with_tracker_count != 0 else 0:.4f} seconds")

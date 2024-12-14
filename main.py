@@ -13,7 +13,7 @@ from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, Bl
 ######### Define the input and output paths ############
 ########################################################
 # These are used as defaults; you can override them via arguments.
-default_input = "_test_data/test_1.mp4"
+default_input = "_test_data/test_4.mp4"
 default_output_folder = "_test_data/"
 ########################################################
 
