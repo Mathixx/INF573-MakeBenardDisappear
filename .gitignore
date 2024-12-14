@@ -5,3 +5,4 @@ mathias.p/
 
 _test_data/
 *.pyc
+*.log

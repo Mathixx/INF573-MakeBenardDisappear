@@ -13,8 +13,8 @@ from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, Bl
 ######### Define the input and output paths ############
 ########################################################
 # These are used as defaults; you can override them via arguments.
-default_input = "data/mathias.p/INF573_data/video/red_cap_video.mp4"
-default_output_folder = "data/mathias.p/INF573_data/output/"
+default_input = "_test_data/test_1.mp4"
+default_output_folder = "_test_data/"
 ########################################################
 
 ########################################################
@@ -36,7 +36,7 @@ def initialize_components(type:str):
 
     if type == 'video' or type == 'photo':
         # To select between LAMA, Blurring and OpenCV inpainting remover
-        remover = BetterLamaInpaintingRemover()
+        remover = LamaInpaintingRemover()
     else:
         remover = None
 
@@ -48,7 +48,13 @@ def initialize_components(type:str):
 ########################################################
 ########################################################
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    filename='main.log',          # Name of the log file
+    filemode='w',
+    level=logging.DEBUG,          # Minimum level to log
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Log message format
+    datefmt='%Y-%m-%d %H:%M:%S'  # Timestamp format
+)
 
 def main():
     parser = argparse.ArgumentParser(description="Process video, photo, or live feed with Benard Supressor.")

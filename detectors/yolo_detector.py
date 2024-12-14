@@ -95,7 +95,7 @@ class YOLODetector(Detector):
         """
         # Detect humans in the frame
         human_Boxes = self.human_detect(frame)
-        logging.debug("detected humans")
+        logging.debug(f"detected {len(human_Boxes)} humans")
 
         # Detect red caps in the frame
         red_cap_Boxes = self.red_cap_detect(frame)
@@ -166,3 +166,23 @@ class YOLODetector(Detector):
                 intersecting_humans[i] = (x, y, w, h)
 
         return intersecting_humans, human_Boxes, red_cap_Boxes
+
+    def log_tracking_stats(self, frame_count: int):
+        """
+        Log the tracking statistics for the red cap detector.
+        """
+        logging.info(f"Red cap detected without tracking count: {self.red_cap_detector.red_cap_detected_count}")
+        logging.info(f"Additional red cap detected with tracking count: {self.red_cap_detector.red_cap_detected_with_tracker_count}")
+        logging.info(f"Total red cap detected count: {self.red_cap_detector.red_cap_detected_count + self.red_cap_detector.red_cap_detected_with_tracker_count}")
+        logging.info(f"Total frame count: {frame_count}")
+        logging.info(f"Red cap detection rate without tracker: {(self.red_cap_detector.red_cap_detected_count) / frame_count * 100:.2f}%")
+        logging.info(f"Red cap detection rate with tracker: {(self.red_cap_detector.red_cap_detected_count + self.red_cap_detector.red_cap_detected_with_tracker_count) / frame_count * 100:.2f}%")
+        logging.info(f"Percent increase in detection rate with tracker: {(self.red_cap_detector.red_cap_detected_with_tracker_count) / self.red_cap_detector.red_cap_detected_count * 100:.2f}%")
+        logging.info("")
+
+    def log_tracking_time(self, frame_count: int):
+        """
+        Log the mean time spent on initializing and updating the tracker.
+        """
+        logging.info(f"Mean time spent on initializing tracker: {self.red_cap_detector.total_time_init_tracker / frame_count:.4f} seconds")
+        logging.info(f"Mean time spent on updating tracker: {self.red_cap_detector.total_time_update_tracker / self.red_cap_detector.red_cap_detected_with_tracker_count:.4f} seconds")

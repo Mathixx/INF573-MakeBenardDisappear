@@ -12,5 +12,5 @@ datasets==3.0.1
 oss2
 mmtrack
 mmcv
-simplejsom
+simplejson
 ### Maybe seaborn ###

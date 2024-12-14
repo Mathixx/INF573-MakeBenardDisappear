@@ -1,5 +1,6 @@
 import cv2
 import logging
+import time
 import numpy as np
 from detectors import Detector
 from trackers import OpenCVTracker
@@ -35,6 +36,10 @@ class RedCapDetector(Detector):
     def __init__(self):
         self.tracker = OpenCVTracker()
         self.tracking = False
+        self.red_cap_detected_count = 0
+        self.red_cap_detected_with_tracker_count = 0
+        self.total_time_init_tracker = 0
+        self.total_time_update_tracker = 0
 
     def detect(self, frame: np.ndarray, hue_range=(160, 180), min_circularity=0.3, ratio=0.0002, min_saturation=100, min_value=100) -> list:
         """
@@ -93,8 +98,13 @@ class RedCapDetector(Detector):
         logging.debug(f"Detected red caps: {red_cap_boxes}")
 
         if red_cap_boxes:
+            self.red_cap_detected_count += 1
             bbox = red_cap_boxes[0]
+            start_time = time.time()
             self.reinitialize_tracker(frame, bbox)
+            init_time = time.time() - start_time
+            logging.debug(f"Tracker initialized in {init_time} seconds.")
+            self.total_time_init_tracker += init_time
             return red_cap_boxes
 
         logging.info("No red caps detected. Using tracker fallback.")
@@ -103,8 +113,13 @@ class RedCapDetector(Detector):
             return []
 
         try:
+            start_time = time.time()
             tracked_bbox = self.tracker.update(frame)
+            update_time = time.time() - start_time
+            self.total_time_update_tracker += update_time
+            logging.debug(f"Tracker updated in {update_time} seconds.")
             if tracked_bbox:
+                self.red_cap_detected_with_tracker_count += 1
                 logging.debug(f"Tracker successfully updated: {tracked_bbox}")
                 return [tracked_bbox]
         except Exception as e:
