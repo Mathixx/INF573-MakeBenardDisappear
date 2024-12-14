@@ -15,23 +15,15 @@ warnings.filterwarnings("ignore")
 
 class BetterLamaInpaintingRemover(Remover):
     """
-    Concrete implementation of Remover that uses Simple Lama Inpainting Model.
-    Based of : https://github.com/enesmsahin/simple-lama-inpainting
+    Concrete implementation of Remover that uses Lama Inpainting Model and a refinement to improve the inpainting.
     """
 
     def __init__(self):
-        """
-        Initialize the remover with specified device.
-        
-        Parameters:
-        - method: The inpainting method, either 'telea' or 'ns' (Navier-Stokes).
-        - inpaint_radius: Radius of a circular neighborhood of each point inpainted.
-        """
         self.remover = pipeline(Tasks.image_inpainting, model='damo/cv_fft_inpainting_lama', refine=True)
 
     def remove(self, frame: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """
-        Perform object removal using SimpleLama Inpainting Model.
+        Perform object removal using Large Lama Inpainting Model with refinement
         
         Parameters:
         - frame: The input image (as a 3 Channel numpy array).

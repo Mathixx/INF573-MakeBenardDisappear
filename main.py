@@ -13,8 +13,8 @@ from removers import Remover, LamaInpaintingRemover, OpenCvInpaintingRemover, Bl
 ######### Define the input and output paths ############
 ########################################################
 # These are used as defaults; you can override them via arguments.
-default_input = "_test_data/test_4.mp4"
-default_output_folder = "_test_data/"
+default_input = "data/mathias.p/INF573_data/video/video1.mp4"
+default_output_folder = "data/mathias.p/INF573_data/output/"
 ########################################################
 
 ########################################################
@@ -36,7 +36,7 @@ def initialize_components(type:str):
 
     if type == 'video' or type == 'photo':
         # To select between LAMA, Blurring and OpenCV inpainting remover
-        remover = LamaInpaintingRemover()
+        remover = BetterLamaInpaintingRemover()
     else:
         remover = None
 
