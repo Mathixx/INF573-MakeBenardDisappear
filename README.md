@@ -1,6 +1,6 @@
 # INF573 - Make Benard Disappear
 
-This project applies advanced computer vision techniques to remove a specific individual, whom we will refer to as Benard, from visual media such as photos, videos, and live recordings. The modular pipeline integrates state-of-the-art algorithms for detection, segmentation, tracking, and inpainting.
+This project applies advanced computer vision techniques to remove a specific individual **wearing a red cap**, whom we will refer to as Benard, from visual media such as photos, videos, and live recordings. The modular pipeline integrates state-of-the-art algorithms for detection, segmentation, tracking, and inpainting.
 
 ## Table of Contents
 
