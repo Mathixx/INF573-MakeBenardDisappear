@@ -6,7 +6,7 @@ import cv2
 class FlorenceSegmentor(Segmentor):
     """
     Florence-based segmentor using Ikomia.
-    This class segments objects using Flornce and generates a segmentation mask.
+    This class segments objects using Florence and generates a segmentation mask.
     """
 
     def __init__(self, workflow=None, device='cpu'):
